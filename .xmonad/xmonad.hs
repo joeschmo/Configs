@@ -1,120 +1,134 @@
+import Graphics.X11.ExtraTypes.XF86
+
 import XMonad
-import XMonad.ManageHook
-import XMonad.Hooks.FloatNext
-import XMonad.Util.Run
-import XMonad.Layout.NoBorders (smartBorders)
-import XMonad.Hooks.DynamicLog
-import XMonad.Hooks.ManageDocks
-import XMonad.Prompt
-import XMonad.Prompt.Shell
-import XMonad.Prompt.Ssh
-import XMonad.Layout.Minimize
+
+import XMonad.Actions.CopyWindow (copy)
+import XMonad.Actions.CycleWS
+import XMonad.Actions.DynamicWorkspaces
 import XMonad.Actions.TagWindows
-import XMonad.Actions.RotSlaves
-import System.Exit
+
+import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.EwmhDesktops
+import XMonad.Hooks.FloatNext
+import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.ManageHelpers (isFullscreen, doFullFloat)
+import XMonad.Hooks.Place
+
+import XMonad.ManageHook
+
+import XMonad.Util.EZConfig
+import XMonad.Util.Run
+
+import XMonad.Layout.Accordion
+import XMonad.Layout.BinarySpacePartition
+import XMonad.Layout.FixedColumn
+import XMonad.Layout.NoBorders (smartBorders)
+import XMonad.Layout.Spacing
+import XMonad.Layout.Spiral
+import XMonad.Layout.ToggleLayouts
+import XMonad.Layout.ThreeColumns
+
+import XMonad.Prompt
 
 import System.IO
 
 import qualified XMonad.StackSet as W
-import qualified Data.Map        as M
-
-myTerminal = "urxvt"
-
-myBorderWidth = 1
 
 myModMask = mod4Mask
-
-myWorkspaces = ["main", "web", "media", "sysinfo"] ++ map show [5..10]
-
+myWorkspaces = ["1","2","3","4","5","6","7","8","9"]
+myTerminal = "urxvt"
 myNormalBorderColor = "#333333"
 myFocusedBorderColor = "#3465a4"
 
-myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
-    [ ((modm .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
-    , ((modm, xK_p), shellPrompt defaultXPConfig)
-    , ((modm .|. shiftMask, xK_p), spawn "gmrun")
-    , ((modm .|. shiftMask, xK_s), sshPrompt defaultXPConfig)
-    , ((modm .|. shiftMask, xK_c), kill)
-    , ((modm, xK_space), sendMessage NextLayout)
-    , ((modm .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
-    , ((modm, xK_n), refresh)
-    , ((modm .|. shiftMask, xK_f), toggleFloatNext)
-    , ((modm, xK_Tab), windows W.focusDown)
-    , ((modm .|. shiftMask, xK_Tab), rotSlavesUp)
-    , ((modm, xK_j), windows W.focusDown)
-    , ((modm, xK_k), windows W.focusUp)
-    , ((modm, xK_m), windows W.focusMaster)
-    , ((modm, xK_Return), windows W.swapMaster)
-    , ((modm .|. shiftMask, xK_j), windows W.swapDown)
-    , ((modm .|. shiftMask, xK_k), windows W.swapUp)
-    , ((modm, xK_h), sendMessage Shrink)
-    , ((modm, xK_l), sendMessage Expand)
-    , ((modm .|. shiftMask, xK_m), withFocused minimizeWindow)
-    , ((modm .|. controlMask, xK_m), sendMessage RestoreNextMinimizedWin)
-    , ((modm, xK_g), tagPrompt defaultXPConfig (\s -> withFocused (addTag s)))
-    , ((modm .|. controlMask, xK_g), tagDelPrompt defaultXPConfig)
-    , ((modm .|. shiftMask, xK_t), withFocused (addTag "a"))
-    , ((modm .|. controlMask, xK_t), withFocused (delTag "a"))
-    , ((modm .|. shiftMask, xK_d), withTaggedGlobalP "a" shiftHere)
-    , ((modm .|. shiftMask, xK_b), tagPrompt defaultXPConfig (\s -> withTaggedGlobalP s shiftHere))
-    , ((modm, xK_b), sendMessage ToggleStruts)
-    , ((modm, xK_t), withFocused $ windows . W.sink)
-    , ((modm, xK_comma), sendMessage (IncMasterN 1))
-    , ((modm, xK_period), sendMessage (IncMasterN (-1)))
-    , ((modm .|. shiftMask, xK_q), io (exitWith ExitSuccess))
-    , ((modm, xK_q), restart "xmonad" True)
-    , ((modm .|. shiftMask, xK_z), spawn "xscreensaver-command --lock")
-    ]
-    ++
-    [((m .|. modm, k), windows $ f i)
-        | (i,k) <- zip (XMonad.workspaces conf) [xK_1..xK_9]
-        , (f,m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
+myKeys =
+  [ ("M-S-l",           spawn "dm-tool lock")
+  , ("M-p",             spawn "rofi -show run")
+  , ("M-S-<Space>",     sendMessage ToggleLayout)
+  , ("M-S-<Backspace>", removeWorkspace)
+  , ("M-C-<Return>",    addWorkspacePrompt def)
+  , ("M-S-v",           selectWorkspace def)
+  , ("M-m",             withWorkspace def (windows . W.shift))
+  , ("M-S-m",           withWorkspace def (windows . copy))
+  , ("M-S-r",           renameWorkspace def)
+  , ("M-h",             prevWS)
+  , ("M-l",             nextWS)
+  , ("M-d",             sendMessage Expand)
+  , ("M-a",             sendMessage Shrink)
+  , ("M-f",             withFocused $ addTag "misc")
+  , ("M-C-f",           withFocused $ delTag "misc")
+  , ("M-S-f",           toggleFloatNext >> spawn myTerminal)
+  , ("M-g",             withTaggedGlobalP "misc" shiftHere)
+  ]
 
-myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
-    [ ((modMask, button1), (\w -> focus w >> mouseMoveWindow w))
-    , ((modMask, button2), (\w -> focus w >> windows W.swapMaster))
-    , ((modMask, button3), (\w -> focus w >> mouseResizeWindow w))
-    ]
+bspKeys =
+  [ ("M-S-C-M1-l", sendMessage $ ExpandTowards R)
+  , ("M-S-C-M1-h", sendMessage $ ExpandTowards L)
+  , ("M-S-C-M1-j", sendMessage $ ExpandTowards D)
+  , ("M-S-C-M1-k", sendMessage $ ExpandTowards U)
+  , ("M-C-M1-l",   sendMessage $ ShrinkFrom R)
+  , ("M-C-M1-h",   sendMessage $ ShrinkFrom L)
+  , ("M-C-M1-j",   sendMessage $ ShrinkFrom D)
+  , ("M-C-M1-k",   sendMessage $ ShrinkFrom U)
+  , ("M-r",        sendMessage Rotate)
+  , ("M-s",        sendMessage Swap)
+  , ("M-n",        sendMessage FocusParent)
+  , ("M-C-n",      sendMessage SelectNode)
+  , ("M-S-n",      sendMessage MoveNode)
+  , ("M-a",        sendMessage Balance)
+  , ("M-S-a",      sendMessage Equalize)
+  ]
 
-myManageHook = composeAll $
-    [ className =? "Gimp" --> doFloat
-    , className =? "Chromium" --> doF(W.shift "web")
-    , className =? "Firefox" --> doF(W.shift "web")
-    , className =? "mplayer" --> doF(W.shift "media")
-    , className =? "vlc" --> doF(W.shift "media")
-    , className =? "htop" --> doF(W.shift "sysinfo")
-    , className =? "wicd-curses" --> doF(W.shift "sysinfo")
-    , className =? "multitail" --> doF(W.shift "sysinfo")
-    ]
+myLayout =
+  smartSpacing 6 $
+  smartBorders $
+  toggleLayouts Full $
+    avoidStruts $
+          emptyBSP
+      ||| ThreeCol 1 (3/100) (1/3)
+      ||| Mirror tiled
+      ||| spiral (6/7)
+      ||| Accordion
+      ||| Full
+      ||| tiled
+  where
+    tiled = Tall nmaster delta ratio
+    nmaster = 1
+    ratio = 1/2
+    delta = 1/50
 
-myLayout = minimize $ avoidStruts(tiled ||| Mirror tiled ||| Full) ||| Full
-    where
-        tiled = Tall nmaster delta ratio
-        nmaster = 1
-        ratio = 1/2
-        delta = 3/100
+myXmobarLoghook handle = dynamicLogWithPP $ def {
+  ppOutput = hPutStrLn handle,
+  ppCurrent = xmobarColor "white" "#3465a4" . wrap " " " ",
+  ppVisible = xmobarColor "white" "#34a465" . wrap " " " ",
+  ppTitle = xmobarColor "#00aaaa" "" . wrap " " " "
+}
 
-myFocusFollowsMouse = True
+programSpecificManageHooks = composeAll
+  [ className =? "feh" --> doFloat
+  ]
 
-myStartupHook = return ()
+myManageHook = placeHook (fixed (0.5, 0.5))
+  <+> floatNextHook
+  <+> programSpecificManageHooks
+  <+> manageHook def
+  <+> manageDocks
 
 main = do
-    h <- spawnPipe "xmobar /home/joseph/.xmobarrc"
-    xmonad $ defaultConfig 
-        { terminal = myTerminal
-        , focusFollowsMouse = myFocusFollowsMouse
-        , borderWidth = myBorderWidth
-        , modMask = myModMask
-        , workspaces = myWorkspaces
-        , normalBorderColor = myNormalBorderColor
-        , focusedBorderColor = myFocusedBorderColor
-        , keys = myKeys
-        , mouseBindings = myMouseBindings
-        , layoutHook = smartBorders $ myLayout
-        , manageHook = floatNextHook <+> myManageHook
-        , logHook = dynamicLogWithPP $ defaultPP { 
-            ppOutput = hPutStrLn h,
-            ppCurrent = xmobarColor "white" "#3465a4" . wrap " " " ",
-            ppTitle = xmobarColor "green" "" . wrap " " " " }
-        , startupHook = myStartupHook
-        }
+  xmproc <- spawnPipe "pkill xmobar; xmobar ~/.xmobarrc"
+  spawn "pkill dunst; dunst -config ~/.dunstrc"
+  xmonad $ ewmh def
+    { modMask = mod4Mask
+    , terminal = myTerminal
+    , normalBorderColor = myNormalBorderColor
+    , focusedBorderColor = myFocusedBorderColor
+    , layoutHook = myLayout
+    , logHook = myXmobarLoghook xmproc
+    , manageHook = myManageHook
+    , handleEventHook = docksEventHook
+                    <+> handleEventHook def
+                    <+> fullscreenEventHook
+    } `additionalKeysP` (myKeys ++ bspKeys)
+      `additionalKeys`
+      [ ((0, xF86XK_AudioLowerVolume ), spawn "amixer set Master 2-")
+      , ((0, xF86XK_AudioRaiseVolume ), spawn "amixer set Master 2+")
+      ]
