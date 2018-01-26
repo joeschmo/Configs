@@ -1,0 +1,74 @@
+! -- Pencil -------------------------------------------------------- {{{
+!
+!   A color scheme inspired by iA Writer
+!   <https://github.com/reedes/vim-colors-pencil>
+!
+! }}}
+
+! -- Colors -------------------------------------------------------- {{{
+
+! Base
+*background: #212121
+*foreground: #d9d9d9
+*cursorColor: #20bbfc
+! Black
+*color0: #212121
+*color8: #424242
+! Red
+*color1: #c30771
+*color9: #fb007a
+! Green
+*color2: #10a778
+*color10: #5fd7af
+! Yellow
+*color3: #a89c14
+*color11: #f3e430
+! Blue
+*color4: #008ec4
+*color12: #20bbfc
+! Magenta
+*color5: #523c79
+*color13: #6855de
+! Cyan
+*color6: #20a5ba
+*color14: #4fb8cc
+! White
+*color7: #d9d9d9
+*color15: #f1f1f1
+
+! }}}
+
+! -- Urxvt --------------------------------------------------------- {{{
+! no scrollbar
+urxvt*scrollBar: false
+urxvt*depth: 32
+urxvt*background: rgba:0000/0000/0000/dddd
+urxvt*font: xft:Anonymice Powerline:size=10
+urxvt.perl-ext: default,url-select
+urxvt.keysym.M-u: perl:url-select:select_next
+urxvt.url-select.launcher: /usr/bin/chromium
+urxvt.url-select.underline: true
+! }}}
+
+! -- Xft ---------------------------------------------------------- {{{
+Xft.dpi:       96
+Xft.antialias: true
+Xft.rgba:      rgb
+Xft.hinting:   true
+Xft.hintstyle: hintfull
+! }}}
+
+! -- Rofi ---------------------------------------------------------- {{{
+rofi.color-enabled: true
+rofi.color-window: #232c31, #232c31, #232c31
+rofi.color-normal: #232c31, #9ea7a6, #232c31, #232c31, #c59820
+rofi.color-active: #232c31, #9ea7a6, #232c31, #9ea7a6, #232c31
+rofi.color-urgent: #232c31, #9ea7a6, #232c31, #9ea7a6, #232c31
+rofi.opacity: 85
+rofi.font: Inconsolata 11
+rofi.terminal: urxvt
+rofi.eh: 1.5
+rofi.lines: 12
+! }}}
+
+! vim:foldmethod=marker:filetype=xdefaults
